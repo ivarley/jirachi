@@ -1,0 +1,10 @@
+.idea
+*.iml
+out
+target/
+*.log
+.classpath
+.project
+*/.DS_Store
+.DS_Store
+.DS_Store?
