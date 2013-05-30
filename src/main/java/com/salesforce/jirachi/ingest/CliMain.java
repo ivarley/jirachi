@@ -9,7 +9,7 @@ package com.salesforce.jirachi.ingest;
  * Runs the jirachi import process
  */
 public class CliMain {
-    public static void main(String[] args) {
-	System.out.println("Hello world.");
+    public static void main(String[] args) throws Exception {
+      JiraFetcher.fetch();
     }
 }
