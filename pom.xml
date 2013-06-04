@@ -14,6 +14,7 @@
     <properties>
         <hbase.version>0.94.7</hbase.version>
         <hadoop.version>1.0.2</hadoop.version>
+        <phoenix.version>1.2.0</phoenix.version>
         <jcommander.version>1.30</jcommander.version>
         <junit.version>4.11</junit.version>
     </properties>
@@ -66,6 +67,11 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-core</artifactId>
             <version>${hadoop.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.salesforce</groupId>
+            <artifactId>phoenix</artifactId>
+            <version>${phoenix.version}</version>
         </dependency>
         <dependency>
             <groupId>com.beust</groupId>
