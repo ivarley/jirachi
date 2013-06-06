@@ -5,17 +5,13 @@
  */
 package com.salesforce.jirachi.ingest;
 
-import java.util.Map;
-
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.salesforce.jirachi.ingest.JiraFetcher.JiraSet;
-
 /**
  * Runs the jirachi import process
  */
 public class CliMain {
     public static void main(String[] args) throws Exception {
       JiraFetcher.fetchAndPersist();
+      JiraTagger.addTags();
     }
     
 }

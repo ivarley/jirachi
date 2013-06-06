@@ -1,11 +1,9 @@
 package com.salesforce.jirachi.ingest;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.Statement;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import org.joda.time.DateTime;
@@ -15,7 +13,6 @@ import org.joda.time.format.DateTimeFormatter;
 import com.atlassian.jira.rest.client.api.NamedEntity;
 import com.atlassian.jira.rest.client.api.domain.*;
 import com.salesforce.jirachi.ingest.JiraFetcher.JiraSet;
-import com.salesforce.phoenix.schema.TableAlreadyExistsException;
 
 /**
  * Dump a map of JIRA issues into Phoenix
@@ -23,24 +20,26 @@ import com.salesforce.phoenix.schema.TableAlreadyExistsException;
 public class PhoenixJiraPersister  {
   
   public static void persist(JiraSet js) throws Exception {
-    Connection conn = getPhoenixConnection("localhost");
-    conn.setAutoCommit(true);
-    createSchema(conn);
-    // push the comments into the comment table
-    for (Entry<String,List<Comment>> e : js.comments.entrySet()){
-      insertComments(e.getKey(), e.getValue(), conn);
+    Connection conn = PhoenixUtils.getPhoenixConnection();
+    try {
+      createSchema(conn);
+      // push the comments into the comment table
+      for (Entry<String,List<Comment>> e : js.comments.entrySet()){
+        insertComments(e.getKey(), e.getValue(), conn);
+      }
+      // push the attachments into the attachment table
+      for (Entry<String,List<Attachment>> e : js.attachments.entrySet()){
+        insertAttachments(e.getKey(), e.getValue(), conn);
+      }
+      // push the issues into the issue table
+      for (Issue i : js.issues.values()){
+        int numComments = js.comments.get(i.getKey()).size();
+        int numAttachments = js.attachments.get(i.getKey()).size();
+        insertIssue(i, numComments, numAttachments, conn);
+      }
+    } finally {
+      conn.close();
     }
-    // push the attachments into the attachment table
-    for (Entry<String,List<Attachment>> e : js.attachments.entrySet()){
-      insertAttachments(e.getKey(), e.getValue(), conn);
-    }
-    // push the issues into the issue table
-    for (Issue i : js.issues.values()){
-      int numComments = js.comments.get(i.getKey()).size();
-      int numAttachments = js.attachments.get(i.getKey()).size();
-      insertIssue(i, numComments, numAttachments, conn);
-    }
-    conn.close();
   }
 
   private static void insertAttachments(String key, List<Attachment> attachments, Connection conn) throws Exception {
@@ -64,13 +63,7 @@ public class PhoenixJiraPersister  {
           .append(a.getSize() + ", ")
           .append(getNullableDate(a.getCreationDate()) + ")");
       
-      Statement stmt = conn.createStatement();
-      try {
-        stmt.execute(upsert.toString());
-      } catch (Exception ex){
-        System.out.println(upsert.toString());
-        throw ex;
-      }
+      PhoenixUtils.execute(conn, upsert.toString());
     }
   }
 
@@ -91,13 +84,7 @@ public class PhoenixJiraPersister  {
           .append(getString(c.getBody()) + ", ")
           .append(getNullableDate(c.getCreationDate()) + ")");
       
-      Statement stmt = conn.createStatement();
-      try {
-        stmt.execute(upsert.toString());
-      } catch (Exception ex){
-        System.out.println(upsert.toString());
-        throw ex;
-      }
+      PhoenixUtils.execute(conn, upsert.toString());
     }
   }
 
@@ -150,13 +137,7 @@ public class PhoenixJiraPersister  {
         .append(getCount(issue.getSubtasks()) + ", ")
         .append(getCount(issue.getWorklogs()) + ")");
     
-    Statement stmt = conn.createStatement();
-    try {
-      stmt.execute(upsert.toString());
-    } catch (Exception ex){
-      System.out.println(upsert.toString());
-      throw ex;
-    }
+    PhoenixUtils.execute(conn, upsert.toString());
   }
 
   private static String getLong(Long l) {
@@ -212,55 +193,57 @@ public class PhoenixJiraPersister  {
 
 
   private static void createJiraTable(Connection conn) throws Exception {
-    Statement stmt = conn.createStatement();
-    try {
-      stmt.execute("CREATE TABLE JIRA_ISSUE (id bigint NOT NULL, " +
-          "issue_key varchar(11) NOT NULL, " +
-          "summary varchar NOT NULL, " +
-          "description varchar NULL, " +
-          "assignee varchar NULL, " +
-          "reporter varchar NULL, " +
-          "creationDate timestamp NULL, " +
-          "updateDate timestamp NULL, " +
-          "issueType varchar NULL, " +
-          "priority varchar NULL, " +
-          "resolution varchar NULL, " +
-          "status varchar NULL, " +
-          "watchers integer NULL, " +
-          "numAffectedVersions integer NULL, " +
-          "fixVersions integer NULL, " +
-          "numAttachments integer NULL, " +
-          "numChangelogs integer NULL, " +
-          "numComments integer NULL, " +
-          "numIssueLinks integer NULL, " +
-          "numLabels integer NULL, " +
-          "numSubtasks integer NULL, " +
-          "numWorkLogs integer NULL " +
-          "CONSTRAINT pk primary key (id))");
-    } catch (TableAlreadyExistsException ex){
-      // GULP
-    }
+    String SQL = "CREATE TABLE JIRA_ISSUE (id bigint NOT NULL, " +
+        "issue_key varchar(11) NOT NULL, " +
+        "summary varchar NOT NULL, " +
+        "description varchar NULL, " +
+        "assignee varchar NULL, " +
+        "reporter varchar NULL, " +
+        "creationDate timestamp NULL, " +
+        "updateDate timestamp NULL, " +
+        "issueType varchar NULL, " +
+        "priority varchar NULL, " +
+        "resolution varchar NULL, " +
+        "status varchar NULL, " +
+        "watchers integer NULL, " +
+        "numAffectedVersions integer NULL, " +
+        "fixVersions integer NULL, " +
+        "numAttachments integer NULL, " +
+        "numChangelogs integer NULL, " +
+        "numComments integer NULL, " +
+        "numIssueLinks integer NULL, " +
+        "numLabels integer NULL, " +
+        "numSubtasks integer NULL, " +
+        "numWorkLogs integer NULL, " +
+        createColumns(JiraTagger.getTagNames()) + 
+        "CONSTRAINT pk primary key (id))";
+    PhoenixUtils.executeNoTableExistsThrow(conn, SQL);
   }
   
+  /**
+   * Using all the tag names from the JiraTagger, create the right syntax for adding extra columns to the table
+   */
+  private static String createColumns(Collection<String> tagNames) {
+    StringBuilder s = new StringBuilder();
+    for (String tagName : tagNames){
+      s.append(tagName).append(" BOOLEAN, ");
+    }
+    return s.toString().substring(0, s.length() - 2); // remove trailing ", "
+  }
+
   private static void createCommentTable(Connection conn) throws Exception {
-    Statement stmt = conn.createStatement();
-    try {
-      stmt.execute("CREATE TABLE JIRA_COMMENT (" +
+    String SQL = "CREATE TABLE JIRA_COMMENT (" +
           "comment_id bigint NOT NULL," +
           "issue_key varchar(11) NOT NULL, " +
           "author varchar NOT NULL, " +
           "body varchar NOT NULL, " +
           "creationDate timestamp NULL " +
-          "CONSTRAINT pk primary key (comment_id))");
-    } catch (TableAlreadyExistsException ex){
-      // GULP
-    }
+          "CONSTRAINT pk primary key (comment_id))";
+    PhoenixUtils.executeNoTableExistsThrow(conn, SQL);
   }
   
   private static void createAttachmentTable(Connection conn) throws Exception {
-    Statement stmt = conn.createStatement();
-    try {
-      stmt.execute("CREATE TABLE JIRA_ATTACHMENT (" +
+    String SQL = "CREATE TABLE JIRA_ATTACHMENT (" +
           "issue_key varchar(11) NOT NULL, " +
           "filename varchar NOT NULL, " +
           "contentUri varchar NOT NULL, " +
@@ -268,16 +251,8 @@ public class PhoenixJiraPersister  {
           "mimeType varchar NULL, " +
           "size integer NOT NULL, " +
           "creationDate timestamp NULL " +
-          "CONSTRAINT pk primary key (issue_key, filename))");
-    } catch (TableAlreadyExistsException ex){
-      // GULP
-    }
+          "CONSTRAINT pk primary key (issue_key, filename))";
+    PhoenixUtils.executeNoTableExistsThrow(conn, SQL);
   }
 
-
-  private static Connection getPhoenixConnection(String zkQuorum) throws Exception {
-    Class.forName("com.salesforce.phoenix.jdbc.PhoenixDriver");
-    String connectionURL = "jdbc:phoenix:" + zkQuorum;
-    return DriverManager.getConnection (connectionURL);
-  }
 }
