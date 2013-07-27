@@ -1,0 +1,8 @@
+{
+	"isSnapshot" : [
+          "snapshotatcreation",
+          "netty",
+          "pom.xml",
+          "mvn"
+     ]
+}

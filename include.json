@@ -1,0 +1,110 @@
+{
+	"isTest" : [
+		"test",
+		"junit",
+		"hbase-it"
+	],
+	"isDoc" : [
+		"ref manual", 
+	    " site",
+        "site.xml",
+		"website",
+		"site target",
+		"[site]",
+		"[book]",
+		"docbook",
+		"[docs]",
+		"doc improvement",
+		"hbase-examples",
+		"guide", 
+		"book ",
+		"hbase book",
+		"book.xml",
+		"the book",
+		"of book",
+		"to book",
+		"javadoc",
+		"document", 
+		"copyright"
+    ],
+	"isBuild" : [
+        "pom",
+        "maven",
+        "mvn",
+        "classpath",
+        "compile",
+        "build+error",
+        "build+fix",
+        "compilation",
+        "assembly",
+        "formatter",
+        "hadoopqa",
+        "findbug"
+    ],
+	"isPort" : [
+        "backport", 
+        "back port", 
+        "forward port", 
+        "to 0.9", 
+        "reapply",
+        "port HBASE"
+    ], 
+	"isReplication" : [
+        "replication"
+	],
+	"isSnapshot" : [
+        "snapshot"
+    ],
+	"isProto" : [
+          "protos",
+          "protocol buffer",
+          "protobuf", 
+          "proto ", 
+          "hbase-protocol",
+          "pb-",
+          "to pb",
+          "pb objects",
+          "pb definitions",
+          "pb conversion",
+          "enforce pb"
+	],
+	"isModule" : [
+        "hbase-common",
+        "hbase-client",
+        "module naming",
+        "multi-module",
+        "multimodule",
+        "module split",
+        "modularization",
+        "consistent package"
+	],
+	"isCompaction" : [
+        "compact"
+    ],
+    "isBulk" : [
+          "bulkload",
+          "bulk load",
+          "bulk delet"
+	],
+    "isSecurity" : [
+        "secur"
+	],
+    "isMetrics" : [
+        "metric"
+	],
+	"isAssignment" : [
+        "assignment",
+        "assign%region",
+        "region%assign"
+	],
+	"isHadoop2" : [
+        "hadoop 2",
+        "hadoop2",
+        "hadoop-2",
+        "hadoop 1 and 2",
+        "hadoop-0.20.205 and 0.22.0",
+        "hadoop-profile=2.0",
+        "hadoop 0.22",
+        "hadoop 0.23"
+    ]
+}

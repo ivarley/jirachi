@@ -1,11 +1,18 @@
 package com.salesforce.jirachi.ingest;
 
+import java.io.File;
 import java.sql.Connection;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 /**
  * Add search-term-based "tags" to the issue table (each as a column). Each search term is evaluated as
@@ -20,116 +27,13 @@ public class JiraTagger {
    * Strings to search on in summaries to apply tags. 
    * Limited wildcarding is allowed (% for any characters, . for one character), per SQL syntax.
    */
-  static Map<String,List<String>> tags = new HashMap<String,List<String>>();
+  static Map<String,List<String>> tags = loadTags("include.json");
   /**
    * Strings to search on in summaries to remove tags.
    * Limited wildcarding is allowed (% for any characters, . for one character), per SQL syntax.
    */
-  static Map<String,List<String>> tagExclusions = new HashMap<String,List<String>>();
+  static Map<String,List<String>> tagExclusions = loadTags("exclude.json");
   
-  //TODO: move this to be pulled in from a file
-  static {
-    tags.put("isTest", Arrays.asList(
-      "test",
-      "junit",
-      "hbase-it"));
-    tags.put("isDoc", Arrays.asList(
-      "ref manual", 
-      " site",
-      "site.xml",
-      "website",
-      "site target",
-      "[site]",
-      "[book]",
-      "docbook",
-      "[docs]",
-      "doc improvement",
-      "hbase-examples",
-      "guide", 
-      "book ",
-      "hbase book",
-      "book.xml",
-      "the book",
-      "of book",
-      "to book",
-      "javadoc",
-      "document", 
-      "copyright"));
-    tags.put("isBuild", Arrays.asList(
-      "pom",
-      "maven",
-      "mvn",
-      "classpath",
-      "compile",
-      "build+error",
-      "build+fix",
-      "compilation",
-      "assembly",
-      "formatter",
-      "hadoopqa",
-      "findbug"));
-    tags.put("isPort", Arrays.asList(
-      "backport", 
-      "back port", 
-      "forward port", 
-      "to 0.9", 
-      "reapply",
-      "port HBASE"));
-    tags.put("isReplication", Arrays.asList(
-      "replication"));
-    tags.put("isSnapshot", Arrays.asList(
-        "snapshot"));
-    tagExclusions.put("isSnapshot", Arrays.asList(
-        "snapshotatcreation",
-        "netty",
-        "pom.xml",
-        "mvn"));
-    tags.put("isProto", Arrays.asList(
-        "protos",
-        "protocol buffer",
-        "protobuf", 
-        "proto ", 
-        "hbase-protocol",
-        "pb-",
-        "to pb",
-        "pb objects",
-        "pb definitions",
-        "pb conversion",
-        "enforce pb"));
-    tags.put("isModule", Arrays.asList(
-      "hbase-common",
-      "hbase-client",
-      "module naming",
-      "multi-module",
-      "multimodule",
-      "module split",
-      "modularization",
-      "consistent package"));
-    tags.put("isCompaction", Arrays.asList(
-      "compact"));
-    tags.put("isBulk", Arrays.asList(
-        "bulkload",
-        "bulk load",
-        "bulk delet"));
-    tags.put("isSecurity", Arrays.asList(
-      "secur"));
-    tags.put("isMetrics", Arrays.asList(
-      "metric"));
-    tags.put("isAssignment", Arrays.asList(
-      "assignment",
-      "assign%region",
-      "region%assign"));
-    tags.put("isHadoop2", Arrays.asList(
-      "hadoop 2",
-      "hadoop2",
-      "hadoop-2",
-      "hadoop 1 and 2",
-      "hadoop-0.20.205 and 0.22.0",
-      "hadoop-profile=2.0",
-      "hadoop 0.22",
-      "hadoop 0.23"));
-  }
-
   /**
    * Get a list of all the tag names, to be used in the create table statement
    * @return
@@ -168,6 +72,32 @@ public class JiraTagger {
     } finally {
       conn.close();
     }
+  }
+
+  /**
+   * Load the tags and search expressions from json, return them as a map of lists
+   */
+  public static Map<String, List<String>> loadTags(String fileName)  {
+    Map<String, List<String>> result = Maps.newLinkedHashMap(); // keep insertion order
+    try {
+      ObjectMapper m = new ObjectMapper();
+      JsonNode root = m.readValue(new File(fileName), JsonNode.class);
+      Iterator<Entry<String,JsonNode>> tags = root.getFields();
+      while (tags.hasNext()){
+        Entry<String,JsonNode> tag = tags.next();
+        String tagName = tag.getKey();
+        Iterator<JsonNode> matchers = tag.getValue().getElements();
+        List<String> matcherValues = Lists.newArrayList();
+        while (matchers.hasNext()){
+          JsonNode matcher = matchers.next();
+          matcherValues.add(matcher.getTextValue());
+        }
+        result.put(tagName, matcherValues);
+      }
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+    return result;
   }
 
 }
