@@ -18,6 +18,8 @@ import com.google.common.collect.Lists;
  */
 public class JiraFetcher {
   
+  private static String baseUrl = System.getProperty("jirachi.baseUrl");
+
   public static class JiraSet{
     JiraSet(Map<String,Issue> issues, Map<String,List<Comment>> comments, Map<String,List<Attachment>> attachments) {
       this.issues = issues;
@@ -31,7 +33,7 @@ public class JiraFetcher {
 
 	public static void fetchAndPersist() throws Exception{
 	  JiraRestClientFactory j = new AsynchronousJiraRestClientFactory();
-	  JiraRestClient c = j.create(new URI("https://issues.apache.org/jira/"), new AnonymousAuthenticationHandler());
+	  JiraRestClient c = j.create(new URI(baseUrl), new AnonymousAuthenticationHandler());
 	  SearchRestClient s = c.getSearchClient();
     IssueRestClient irc = c.getIssueClient();
 	  String jql = "project%20%3D%20HBASE%20AND%20resolved%20>%3D%202012-05-23%20AND%20resolved%20<%3D%202013-05-24%20AND%20resolution%20in%20(Fixed%2C%20Implemented)";
