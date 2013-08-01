@@ -19,6 +19,7 @@ import com.google.common.collect.Lists;
 public class JiraFetcher {
   
   private static String baseUrl = System.getProperty("jirachi.baseUrl");
+  private static String restQuery = System.getProperty("jirachi.restQuery");
 
   public static class JiraSet{
     JiraSet(Map<String,Issue> issues, Map<String,List<Comment>> comments, Map<String,List<Attachment>> attachments) {
@@ -36,7 +37,7 @@ public class JiraFetcher {
 	  JiraRestClient c = j.create(new URI(baseUrl), new AnonymousAuthenticationHandler());
 	  SearchRestClient s = c.getSearchClient();
     IssueRestClient irc = c.getIssueClient();
-	  String jql = "project%20%3D%20HBASE%20AND%20resolved%20>%3D%202012-05-23%20AND%20resolved%20<%3D%202013-05-24%20AND%20resolution%20in%20(Fixed%2C%20Implemented)";
+	  String jql = restQuery;
 	  // query once to get the size
     Promise<SearchResult> sizeQuery = s.searchJql(jql,1,0);
     SearchResult sizeQueryResult = sizeQuery.get();

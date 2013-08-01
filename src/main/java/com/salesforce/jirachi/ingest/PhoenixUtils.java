@@ -8,7 +8,7 @@ import com.salesforce.phoenix.schema.TableAlreadyExistsException;
 
 public class PhoenixUtils {
   
-  private static String zkQuorum = "localhost"; // TODO: pull from configs
+  private static String zkQuorum = System.getProperty("hbase.zookeeper.quorum");
 
   public static Connection getPhoenixConnection() throws Exception {
     Class.forName("com.salesforce.phoenix.jdbc.PhoenixDriver");
