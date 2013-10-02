@@ -38,7 +38,16 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 import com.atlassian.jira.rest.client.api.NamedEntity;
-import com.atlassian.jira.rest.client.api.domain.*;
+import com.atlassian.jira.rest.client.api.domain.Attachment;
+import com.atlassian.jira.rest.client.api.domain.BasicIssueType;
+import com.atlassian.jira.rest.client.api.domain.BasicPriority;
+import com.atlassian.jira.rest.client.api.domain.BasicResolution;
+import com.atlassian.jira.rest.client.api.domain.BasicStatus;
+import com.atlassian.jira.rest.client.api.domain.BasicUser;
+import com.atlassian.jira.rest.client.api.domain.BasicWatchers;
+import com.atlassian.jira.rest.client.api.domain.Comment;
+import com.atlassian.jira.rest.client.api.domain.Issue;
+import com.atlassian.jira.rest.client.api.domain.User;
 import com.salesforce.jirachi.ingest.JiraFetcher.JiraSet;
 
 /**
@@ -255,7 +264,7 @@ public class PhoenixJiraPersister  {
     for (String tagName : tagNames){
       s.append(tagName).append(" BOOLEAN, ");
     }
-    return s.toString().substring(0, s.length() - 2); // remove trailing ", "
+    return s.toString().substring(0, s.length() - 2) + " "; // remove trailing ", "
   }
 
   private static void createCommentTable(Connection conn) throws Exception {

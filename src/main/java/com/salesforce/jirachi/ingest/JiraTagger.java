@@ -79,7 +79,7 @@ public class JiraTagger {
       for (String tagName : tags.keySet()){
         List<String> searchTerms = tags.get(tagName);
         StringBuilder b = new StringBuilder("UPSERT INTO Jira_Issue (id, ").append(tagName);
-        b.append(") SELECT id, 'T' FROM Jira_Issue WHERE (");
+        b.append(") SELECT id, true FROM Jira_Issue WHERE (");
         // apply tags
         for (String term : searchTerms) {
           b.append("lower(summary) like '%").append(term.toLowerCase()).append("%' OR ");

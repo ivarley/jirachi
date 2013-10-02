@@ -32,6 +32,17 @@
              <checksumPolicy>warn</checksumPolicy>
            </releases>
          </repository>
+         <repository>
+			     <id>phoenix-github</id>
+			     <name>Phoenix Github Maven</name>
+			     <url>https://raw.github.com/forcedotcom/phoenix/maven-artifacts/releases</url>
+			     <snapshots>
+			       <enabled>true</enabled>
+			     </snapshots>
+			     <releases>
+			       <enabled>true</enabled>
+			     </releases>
+			   </repository>
     </repositories>
            <pluginRepositories>
          <pluginRepository>
